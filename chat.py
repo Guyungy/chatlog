@@ -131,15 +131,26 @@ def add_chat_row(chat=None):
     idx = len(chat_rows)
     name_var = tk.StringVar(value=chat.get("name", ""))
 
-    name_entry = tk.Entry(chat_inner_frame, width=28, textvariable=name_var, font=('微软雅黑', 10))
-    name_entry.grid(row=idx+1, column=0, padx=3, pady=2, sticky="ew")
-    # 日期列显示全局日期，不可编辑
-    from_label = tk.Label(chat_inner_frame, textvariable=global_date_from_var, width=14, font=('微软雅黑', 10), bg="#f7faff")
-    from_label.grid(row=idx+1, column=1, padx=3, pady=2, sticky="ew")
-    to_label = tk.Label(chat_inner_frame, textvariable=global_date_to_var, width=14, font=('微软雅黑', 10), bg="#f7faff")
-    to_label.grid(row=idx+1, column=2, padx=3, pady=2, sticky="ew")
-    btn_del = tk.Button(chat_inner_frame, text="删", command=lambda: del_chat_row(idx), font=('微软雅黑', 9), width=4)
-    btn_del.grid(row=idx+1, column=3, padx=3, pady=2, sticky="ew")
+    row_frame = tk.Frame(chat_inner_frame, bg="#f7faff")
+    row_frame.grid(row=idx+1, column=0, columnspan=4, sticky="ew", padx=0, pady=1)
+    row_frame.grid_columnconfigure(0, weight=1)
+    row_frame.grid_columnconfigure(1, weight=0)
+    row_frame.grid_columnconfigure(2, weight=0)
+    row_frame.grid_columnconfigure(3, weight=0)
+
+    def on_enter(e): row_frame.config(bg="#e3f0ff")
+    def on_leave(e): row_frame.config(bg="#f7faff")
+    row_frame.bind("<Enter>", on_enter)
+    row_frame.bind("<Leave>", on_leave)
+
+    name_entry = tk.Entry(row_frame, width=22, textvariable=name_var, font=('微软雅黑', 10), relief="groove", bd=2)
+    name_entry.grid(row=0, column=0, padx=(2, 6), pady=2, sticky="ew")
+    from_label = tk.Label(row_frame, textvariable=global_date_from_var, width=12, font=('微软雅黑', 10), bg="#f7faff")
+    from_label.grid(row=0, column=1, padx=2, pady=2)
+    to_label = tk.Label(row_frame, textvariable=global_date_to_var, width=12, font=('微软雅黑', 10), bg="#f7faff")
+    to_label.grid(row=0, column=2, padx=2, pady=2)
+    btn_del = tk.Button(row_frame, text="✖", command=lambda: del_chat_row(idx), font=('微软雅黑', 10), width=3, fg="#d9534f", bg="#f7faff", bd=0, relief="flat", activebackground="#ffeaea")
+    btn_del.grid(row=0, column=3, padx=(6, 2), pady=2)
 
     def on_name_change(*args):
         for t in template_list:
@@ -148,7 +159,7 @@ def add_chat_row(chat=None):
 
     chat_rows.append({
         "name_var": name_var,
-        "widgets": [name_entry, from_label, to_label, btn_del]
+        "widgets": [row_frame, name_entry, from_label, to_label, btn_del]
     })
     sync_enabled_chats_len()
     update_chat_canvas_scrollregion()
@@ -169,8 +180,13 @@ def add_template_row(tpl=None, n_chat=0):
     if tpl is None:
         tpl = {"name": "新模板", "content": "", "enabled_chats": [False]*n_chat}
     idx = len(template_list)
-    frame = tk.LabelFrame(template_inner_frame, text="模板编辑", padx=10, pady=10, font=('微软雅黑', 10, 'bold'), fg='#185ee0', bg="#f7faff")
-    frame.pack(fill='x', pady=(2, 6), padx=4)
+    frame = tk.LabelFrame(
+        template_inner_frame, text="模板编辑",
+        padx=16, pady=12,
+        font=('微软雅黑', 11, 'bold'), fg='#185ee0',
+        bg="#ffffff", bd=0, relief="flat"
+    )
+    frame.pack(fill='x', pady=(8, 16), padx=12, ipadx=2)
 
     name_var = tk.StringVar(value=tpl["name"])
     def on_template_name_change(*args):
@@ -178,11 +194,11 @@ def add_template_row(tpl=None, n_chat=0):
     name_var.trace_add('write', on_template_name_change)
 
     tk.Label(frame, text="模板标题：", font=('微软雅黑', 10), bg="#f7faff").pack(anchor='w')
-    name_entry = tk.Entry(frame, width=50, textvariable=name_var, font=('微软雅黑', 11, 'bold'))
+    name_entry = tk.Entry(frame, width=50, textvariable=name_var, font=('微软雅黑', 11, 'bold'), relief="groove", bd=2)
     name_entry.pack(anchor='w', pady=(0,6), fill="x")
 
     tk.Label(frame, text="正文内容/提示词：", font=('微软雅黑', 10), bg="#f7faff").pack(anchor='w')
-    content_box = tk.Text(frame, width=85, height=7, font=('微软雅黑', 10))
+    content_box = tk.Text(frame, width=85, height=7, font=('微软雅黑', 10), relief="groove", bd=2)
     content_box.insert(tk.END, tpl.get("content", ""))
     content_box.pack(anchor='w', pady=(0,8), fill="x", expand=True)
 
@@ -192,10 +208,16 @@ def add_template_row(tpl=None, n_chat=0):
     for i in range(n_chat):
         v = tk.BooleanVar(value=tpl["enabled_chats"][i] if i < len(tpl["enabled_chats"]) else False)
         enabled_vars.append(v)
-        cb = tk.Checkbutton(checks_frame, text=chat_rows[i]["name_var"].get() if i < len(chat_rows) else f"群聊{i+1}", variable=v, font=('微软雅黑', 10), bg="#f7faff")
+        cb = tk.Checkbutton(checks_frame, text=chat_rows[i]["name_var"].get() if i < len(chat_rows) else f"群聊{i+1}", variable=v, font=('微软雅黑', 10), bg="#f7faff", activebackground="#e3f0ff")
         cb.grid(row=i, column=0, sticky='w')
-    btn_del = tk.Button(frame, text="删除该模板", command=lambda: del_template_row(idx), font=('微软雅黑', 9))
-    btn_del.pack(anchor='e', pady=(6, 0))
+    btn_del = tk.Button(
+        frame, text="🗑 删除该模板",
+        command=lambda: del_template_row(idx),
+        font=('微软雅黑', 10, "bold"),
+        fg="#d9534f", bg="#fbeaea",
+        bd=0, relief="flat", activebackground="#ffeaea"
+    )
+    btn_del.pack(anchor='e', pady=(8, 0))
 
     template_list.append({
         "frame": frame, "name_var": name_var, "content_box": content_box,
@@ -298,7 +320,7 @@ root = tk.Tk()
 root.title("信息汇总 内部专用")
 root.geometry("1450x720")
 root.resizable(False, False)
-root.configure(bg="#f7faff")
+root.configure(bg="#f4f8fc")  # 更柔和的蓝白色
 
 # 全局日期设置区
 global_date_from_var = tk.StringVar(value=today_str())
@@ -318,8 +340,13 @@ main_frame.grid_columnconfigure(0, weight=1, minsize=540)
 main_frame.grid_columnconfigure(1, weight=2, minsize=850)
 
 # 左侧：群聊列表
-left_frame = tk.LabelFrame(main_frame, text="群聊设置（全局共享）", font=("微软雅黑", 11, "bold"), bg="#f7faff")
-left_frame.grid(row=0, column=0, sticky="nsew", padx=(0, 18), pady=0)
+left_frame = tk.LabelFrame(
+    main_frame, text="群聊设置（全局共享）",
+    font=("微软雅黑", 13, "bold"),
+    bg="#ffffff", fg="#185ee0",
+    bd=0, relief="flat", padx=16, pady=12
+)
+left_frame.grid(row=0, column=0, sticky="nsew", padx=(0, 24), pady=0)
 left_frame.grid_rowconfigure(0, weight=1)
 left_frame.grid_columnconfigure(0, weight=1)
 
@@ -338,8 +365,15 @@ left_frame.columnconfigure(0, weight=1)
 for i, label in enumerate(["群聊名称", "起始日期", "结束日期", ""]):
     tk.Label(chat_inner_frame, text=label, font=('微软雅黑', 10, 'bold'), bg="#f7faff").grid(row=0, column=i, padx=3, pady=2, sticky="ew")
 chat_rows = []
-btn_add_chat = tk.Button(left_frame, text="添加群聊", command=lambda: add_chat_row(), font=('微软雅黑', 10))
-btn_add_chat.grid(row=1, column=0, pady=8, sticky="we", padx=8)
+btn_add_chat = tk.Button(
+    left_frame, text="＋ 添加群聊",
+    command=lambda: add_chat_row(),
+    font=('微软雅黑', 11, "bold"),
+    bg="#e3f0ff", fg="#185ee0",
+    relief="flat", activebackground="#d6eaff",
+    bd=0, height=2
+)
+btn_add_chat.grid(row=1, column=0, pady=12, sticky="we", padx=12)
 
 # 只在鼠标悬停在群聊canvas时才滚动群聊区
 # Windows: event.delta; Linux: Button-4/Button-5; Mac: event.delta方向需反向
@@ -356,7 +390,12 @@ chat_canvas.bind("<Button-4>", _on_mousewheel_chat)  # Linux
 chat_canvas.bind("<Button-5>", _on_mousewheel_chat)  # Linux
 
 # 右侧：模板管理
-right_frame = tk.LabelFrame(main_frame, text="模板管理", font=("微软雅黑", 11, "bold"), bg="#f7faff")
+right_frame = tk.LabelFrame(
+    main_frame, text="模板管理",
+    font=("微软雅黑", 13, "bold"),
+    bg="#ffffff", fg="#185ee0",
+    bd=0, relief="flat", padx=16, pady=12
+)
 right_frame.grid(row=0, column=1, sticky="nsew")
 right_frame.grid_rowconfigure(1, weight=1)
 right_frame.grid_columnconfigure(0, weight=1)
@@ -406,28 +445,41 @@ template_canvas.grid(row=1, column=0, sticky="nsew")
 template_scrollbar.grid(row=1, column=1, sticky="ns")
 template_list = []
 
-# 底部按钮区
+# 底部按钮区美化
 btn_row = tk.Frame(right_frame, bg="#f7faff")
 btn_row.grid(row=2, column=0, sticky="ew", pady=(16, 0), padx=4)
-btn_save = tk.Button(btn_row, text="保存配置", command=save_current_config, font=('微软雅黑', 10), width=12)
-btn_save.pack(side="left", padx=10)
+btn_save = tk.Button(
+    btn_row, text="💾 保存配置",
+    command=save_current_config,
+    font=('微软雅黑', 11, "bold"),
+    width=14, bg="#e3f0ff", fg="#185ee0",
+    relief="flat", activebackground="#d6eaff", bd=0, height=2
+)
+btn_save.pack(side="left", padx=16)
 btn_combine = tk.Button(
     btn_row, 
-    text="立即粘贴并发送 (Ctrl+M)", 
+    text="🚀 立即粘贴并发送 (Ctrl+M)", 
     command=combine_and_paste,
-    font=('微软雅黑', 11, "bold"),
-    bg="#185ee0",
-    fg="white",
-    relief="raised",
-    activebackground="#1360a3",
-    activeforeground="white",
-    width=24
+    font=('微软雅黑', 12, "bold"),
+    bg="#185ee0", fg="white",
+    relief="flat", activebackground="#1360a3",
+    activeforeground="white", width=26, height=2, bd=0
 )
-btn_combine.pack(side="left", padx=20)
+btn_combine.pack(side="left", padx=24)
 
-tk.Label(root, text="请将光标放在目标输入框，点击按钮或按 Ctrl+M 可自动粘贴+发送", 
-         font=('微软雅黑', 9), bg="#f7faff", fg="#444").pack(pady=(2, 2))
-tk.Label(root, text="—— 世界上最乖的宝宝 李明明专用 ——", font=('微软雅黑', 8), fg="#185ee0", bg="#f7faff").pack(pady=(0, 6))
+# 顶部提示语美化
+tk.Label(
+    root,
+    text="请将光标放在目标输入框，点击按钮或按 Ctrl+M 可自动粘贴+发送",
+    font=('微软雅黑', 10, "italic"),
+    bg="#f4f8fc", fg="#185ee0"
+).pack(pady=(8, 2))
+tk.Label(
+    root,
+    text="—— 世界上最乖的宝宝 李明明专用 ——",
+    font=('微软雅黑', 9, "bold"),
+    fg="#185ee0", bg="#f4f8fc"
+).pack(pady=(0, 10))
 
 set_gui_config(load_config())
 template_select.bind('<<ComboboxSelected>>', on_select_template)
